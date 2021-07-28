@@ -33,3 +33,13 @@
 
 ## File-based project format:
 *.iws
+/.idea/.name
+/.idea/codeStyles/codeStyleConfig.xml
+/.idea/compiler.xml
+/.idea/google-java-format.xml
+/.idea/jarRepositories.xml
+/.idea/libraries-with-intellij-classes.xml
+/.idea/misc.xml
+/.idea/codeStyles/Project.xml
+/.idea/runConfigurations.xml
+/.idea/scala_settings.xml
