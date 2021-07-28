@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Stream;
 
@@ -38,7 +39,7 @@ public class JsonReader extends ConversionRateReader {
   public String getPath() { return super.path; }
 
   @Override
-  public CurrencyConversionRate readLine() throws ParseException, IOException {
+  public Optional<CurrencyConversionRate> readLine() throws ParseException, IOException {
     if (!sc.hasNextLine()) {
       try {
         inputStream.close();
@@ -47,7 +48,7 @@ public class JsonReader extends ConversionRateReader {
         throw e;
       }
       if (sc != null) sc.close();
-      return null;
+      return Optional.empty();
     }
 
     String line = sc.nextLine();
@@ -67,7 +68,7 @@ public class JsonReader extends ConversionRateReader {
       Instant instant = Instant.ofEpochSecond(ts);
 
       CurrencyConversionRate conversionRate = new CurrencyConversionRate(instant, currencyPair, rate);
-      return conversionRate;
+      return Optional.of(conversionRate);
     } catch (ParseException e) {
       e.printStackTrace();
       throw e;

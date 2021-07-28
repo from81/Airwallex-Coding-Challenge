@@ -53,11 +53,14 @@ public class App {
 
       while (reader.hasNextLine()) {
         nDataPoints++;
-        CurrencyConversionRate conversionRate = reader.readLine();
+        Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
+        CurrencyConversionRate conversionRate = conversionRateMaybe.get();
         movingAverageQueue.insert(conversionRate);
+
         Optional<Double> movingAverageMaybe = movingAverageQueue.getCurrentMovingAverage(conversionRate.getCurrencyPair());
         Double pctChange;
         Double movingAverage;
+
         if (movingAverageMaybe.isPresent()) {
           movingAverage = movingAverageMaybe.get();
           pctChange = (conversionRate.getRate() - movingAverage) / movingAverage;
