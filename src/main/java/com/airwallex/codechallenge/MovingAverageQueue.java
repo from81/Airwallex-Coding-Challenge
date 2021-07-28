@@ -23,11 +23,10 @@ public class MovingAverageQueue {
     Double rate = conversionRate.getRate();
     Instant ts = conversionRate.getTimestamp();
 
-    PriorityQueue<Pair<Instant, CurrencyConversionRate>> q;
-
     knownCurrencies.add(currencyPair);
 
     // get or create priority queue for the currency pair
+    PriorityQueue<Pair<Instant, CurrencyConversionRate>> q;
     q = queues.getOrDefault(currencyPair, new PriorityQueue<Pair<Instant, CurrencyConversionRate>>(queueSize));
 
     // get cumulative sum of the last n entries, and current queue size
@@ -43,8 +42,11 @@ public class MovingAverageQueue {
     } else {
       currentQueueSize += 1;
     }
+
+    // update data
     cumsum += rate;
     q.add(Pair.with(ts, conversionRate));
+    queues.put(currencyPair, q);
     queueInfo.put(currencyPair, Pair.with(cumsum, currentQueueSize));
 
     // calculate and return moving average
@@ -53,8 +55,6 @@ public class MovingAverageQueue {
 
   public Double getCurrentMovingAverage(String currencyPair) {
     Pair<Double, Integer> currencyInfo = queueInfo.getOrDefault(currencyPair, Pair.with(0.0, 0));
-    Double cumsum = currencyInfo.getValue0();
-    int currentQueueSize = currencyInfo.getValue1();
-    return cumsum / currentQueueSize;
+    return currencyInfo.getValue0() / currencyInfo.getValue1();
   }
 }

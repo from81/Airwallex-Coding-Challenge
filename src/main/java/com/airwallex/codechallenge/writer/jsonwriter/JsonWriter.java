@@ -40,9 +40,11 @@ public class JsonWriter extends MessageWriter {
 
   @Override
   public void writeLine(JSONObject obj) {
-    this.writer.write(obj.toJSONString());
+    this.writer.write(obj.toJSONString() + "\n");
     this.writer.flush();
   }
+
+  public String getPath() { return super.outputPath.toString(); }
 
   public void close() {
     this.writer.close();

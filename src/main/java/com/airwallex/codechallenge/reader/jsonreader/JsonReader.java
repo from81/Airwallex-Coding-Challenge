@@ -35,6 +35,8 @@ public class JsonReader extends ConversionRateReader {
     return sc.hasNextLine();
   }
 
+  public String getPath() { return super.path; }
+
   @Override
   public CurrencyConversionRate readLine() throws ParseException, IOException {
     if (!sc.hasNextLine()) {
@@ -55,7 +57,13 @@ public class JsonReader extends ConversionRateReader {
       jsonObject = (JSONObject) this.parser.parse(line);
       String currencyPair = (String) jsonObject.get("currencyPair");
       Double rate = (Double) jsonObject.get("rate");
-      long ts = ((Double) jsonObject.get("timestamp")).longValue();
+
+      long ts;
+      if (jsonObject.get("timestamp") instanceof Long) {
+        ts = (long) jsonObject.get("timestamp");
+      } else {
+        ts = ((Double) jsonObject.get("timestamp")).longValue();
+      }
       Instant instant = Instant.ofEpochSecond(ts);
 
       CurrencyConversionRate conversionRate = new CurrencyConversionRate(instant, currencyPair, rate);
