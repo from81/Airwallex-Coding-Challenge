@@ -14,7 +14,6 @@ import java.util.Scanner;
 import java.util.stream.Stream;
 
 public class JsonReader extends ConversionRateReader {
-  String path;
   JSONParser parser = new JSONParser();
   Stream<String> stream;
 
@@ -22,14 +21,18 @@ public class JsonReader extends ConversionRateReader {
   Scanner sc;
 
   public JsonReader(String path) throws FileNotFoundException {
-    this.path = path;
+    super.path = path;
     try {
-      this.inputStream = new FileInputStream(path);
+      this.inputStream = new FileInputStream(super.path);
       this.sc = new Scanner(inputStream, "UTF-8");
     } catch (FileNotFoundException e) {
       e.printStackTrace();
       throw e;
     }
+  }
+
+  public Boolean hasNextLine() {
+    return sc.hasNextLine();
   }
 
   @Override

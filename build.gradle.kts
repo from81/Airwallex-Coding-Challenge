@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation("com.googlecode.json-simple", "json-simple", "1.1.1")
+    implementation("org.javatuples", "javatuples", "1.2")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", "2.9+")
