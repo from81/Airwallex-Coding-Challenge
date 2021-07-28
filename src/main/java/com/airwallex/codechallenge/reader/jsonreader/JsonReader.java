@@ -1,4 +1,4 @@
-package com.airwallex.codechallenge.reader;
+package com.airwallex.codechallenge.reader.jsonreader;
 
 
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
@@ -13,16 +13,11 @@ import java.time.Instant;
 import java.util.Scanner;
 import java.util.stream.Stream;
 
-abstract class ConversionRateReader {
-  String path;
-  public abstract CurrencyConversionRate readLine() throws ParseException, IOException;
-}
-
 public class JsonReader extends ConversionRateReader {
+  String path;
   JSONParser parser = new JSONParser();
   Stream<String> stream;
 
-  //  String path;
   FileInputStream inputStream;
   Scanner sc;
 
@@ -51,7 +46,8 @@ public class JsonReader extends ConversionRateReader {
     }
 
     String line = sc.nextLine();
-    JSONObject jsonObject = null;
+    JSONObject jsonObject;
+
     try {
       jsonObject = (JSONObject) this.parser.parse(line);
       String currencyPair = (String) jsonObject.get("currencyPair");
