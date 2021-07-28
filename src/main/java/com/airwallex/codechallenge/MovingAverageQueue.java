@@ -6,6 +6,7 @@ import org.javatuples.Pair;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Optional;
 import java.util.PriorityQueue;
 
 public class MovingAverageQueue {
@@ -53,8 +54,13 @@ public class MovingAverageQueue {
     return cumsum / currentQueueSize;
   }
 
-  public Double getCurrentMovingAverage(String currencyPair) {
-    Pair<Double, Integer> currencyInfo = queueInfo.getOrDefault(currencyPair, Pair.with(0.0, 0));
-    return currencyInfo.getValue0() / currencyInfo.getValue1();
+  public Optional<Double> getCurrentMovingAverage(String currencyPair) {
+    Pair<Double, Integer> currencyInfo = queueInfo.getOrDefault(currencyPair, null);
+    if (currencyInfo != null) {
+      return Optional.of(currencyInfo.getValue0() / currencyInfo.getValue1());
+    }
+    else {
+      return Optional.empty();
+    }
   }
 }
