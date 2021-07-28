@@ -1,18 +1,22 @@
 package com.airwallex.codechallenge;
 
-import com.airwallex.codechallenge.input.Reader;
+import com.airwallex.codechallenge.input.CurrencyConversionRate;
+import com.airwallex.codechallenge.reader.JsonReader;
+import org.json.simple.parser.ParseException;
+
+import java.io.IOException;
 
 public class App {
-
     public static void main(String[] args) {
-        Reader reader = new Reader();
 
-        reader
-                .read(args[0])
-                //
-                // TODO process the input
-                //
-                .forEach(currencyConversionRate -> System.out.println(currencyConversionRate.toString()));
+        String file = "/Users/Kai/Dropbox/Documents/Code/airwallex-code-challenge-grads/example/input1.jsonl";
+        try {
+            JsonReader reader = new JsonReader(file);
+            CurrencyConversionRate conversionRate = reader.readLine();
+            System.out.println(conversionRate);
+        } catch (IOException | ParseException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
-
 }
