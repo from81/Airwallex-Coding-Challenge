@@ -39,11 +39,12 @@ public class MovingAverageMonitor extends Monitor {
   }
 
   @Override
-  public Alert getAlertType() {
-    return null;
+  public Class<SpotChangeAlert> getAlertType() {
+    return alertType;
   }
 
-  public void processRow(CurrencyConversionRate conversionRate) {
+  @Override
+  public Monitor processRow(CurrencyConversionRate conversionRate) {
     lastData = conversionRate;
     String currencyPair = conversionRate.getCurrencyPair();
 
@@ -69,9 +70,12 @@ public class MovingAverageMonitor extends Monitor {
     q.add(Pair.with(conversionRate.getTimestamp(), conversionRate));
     queues.put(currencyPair, q);
     queueInfo.put(currencyPair, Pair.with(cumsum + conversionRate.getRate(), currentQueueSize));
+
+    return this;
   }
 
-  public ArrayList<Alert> checkAllAlerts() {
+  @Override
+  public ArrayList<Alert> getAlertsIfAny() {
     ArrayList<Alert> alerts = new ArrayList<>();
     Method[] methods = this.getClass().getDeclaredMethods();
     for(Method method : methods){

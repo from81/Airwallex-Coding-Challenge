@@ -2,7 +2,6 @@ package com.airwallex.codechallenge;
 
 import com.airwallex.codechallenge.monitor.Monitor;
 import com.airwallex.codechallenge.monitor.MovingAverageMonitor;
-import com.airwallex.codechallenge.monitor.alert.Alert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
 import com.airwallex.codechallenge.reader.ConfigReader;
 import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
@@ -10,10 +9,8 @@ import com.airwallex.codechallenge.writer.jsonwriter.JsonWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.json.simple.parser.ParseException;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,14 +82,11 @@ public class App {
 
         // process each row and check if there are any alerts
         MONITORS.forEach(
-                monitor -> {
-                  monitor.processRow(conversionRate);
-                  monitor.checkAllAlerts().forEach(
-                          alert -> {
-                            logger.info(alert.toString());
-                            writer.writeLine(alert.toJson());
-                          });
-                });
+          monitor -> monitor.processRow(conversionRate).getAlertsIfAny().forEach(
+            alert -> {
+              logger.info(alert.toString());
+              writer.writeLine(alert.toJson());
+            }));
         nDataPoints++;
       }
     }
