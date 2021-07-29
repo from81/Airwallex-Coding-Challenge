@@ -22,6 +22,7 @@ public class App {
   private static final Logger logger = LogManager.getLogger("App");
   private static int nDataPoints = 0;
   private static final ArrayList<Monitor> MONITORS = new ArrayList<>();
+  private static final Path baseDir = Paths.get(System.getProperty("user.dir"));
 
   public static void main(String[] args) {
     // initialize log4j2 config
@@ -50,15 +51,17 @@ public class App {
     }
   }
 
+  private static void createDirectoryIfNotExists(String directoryName) {
+    File directory = new File(Paths.get(baseDir.toString(), directoryName).toString());
+    if (directory.mkdir()) logger.info("Directory created: " + directory.getAbsolutePath());
+  }
+
   public static void run(String inputFile, int windowSize, Float pctChangeThreshold) throws IOException {
     long startTime = System.nanoTime();
 
     // create output and logs directory if they do not exist
-    Path baseDir = Paths.get(System.getProperty("user.dir"));
-    File outputDirectory = new File(String.valueOf(Paths.get(baseDir.toString(), "output")));
-    if (!outputDirectory.exists()) outputDirectory.mkdir();
-    File logDirectory = new File(String.valueOf(Paths.get(baseDir.toString(), "logs")));
-    if (!logDirectory.exists()) logDirectory.mkdir();
+    createDirectoryIfNotExists("output");
+    createDirectoryIfNotExists("logs");
 
     // create reader and writer
     JsonReader reader = new JsonReader(inputFile);
