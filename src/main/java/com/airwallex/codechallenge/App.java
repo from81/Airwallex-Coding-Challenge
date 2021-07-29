@@ -53,7 +53,7 @@ public class App {
 
   private static void createDirectoryIfNotExists(String directoryName) {
     File directory = new File(Paths.get(baseDir.toString(), directoryName).toString());
-    if (directory.mkdir()) logger.info("Directory created: " + directory.getAbsolutePath());
+    if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
   }
 
   public static void run(String inputFile, int windowSize, Float pctChangeThreshold) throws IOException {
