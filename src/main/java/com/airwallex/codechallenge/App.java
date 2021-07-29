@@ -61,7 +61,6 @@ public class App {
 
     // create output and logs directory if they do not exist
     createDirectoryIfNotExists("output");
-    createDirectoryIfNotExists("logs");
 
     // create reader and writer
     JsonReader reader = new JsonReader(inputFile);
