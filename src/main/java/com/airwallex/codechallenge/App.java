@@ -86,6 +86,7 @@ public class App {
         MONITORS.forEach(
           monitor -> monitor.processRow(conversionRate).getAlertsIfAny().forEach(
             alert -> {
+              // Output to log. If it is spot change alerts, then write to jsonline file.
               logger.info(alert.toString());
               if (alert instanceof SpotChangeAlert) writer.writeLine(alert.toJson());
             }));
