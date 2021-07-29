@@ -80,6 +80,7 @@ public class App {
 
       if (conversionRateMaybe.isPresent()) {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
+        nDataPoints++;
 
         // process each row and check if there are any alerts
         MONITORS.forEach(
@@ -88,8 +89,6 @@ public class App {
               logger.info(alert.toString());
               if (alert instanceof SpotChangeAlert) writer.writeLine(alert.toJson());
             }));
-
-        nDataPoints++;
       }
     }
 
