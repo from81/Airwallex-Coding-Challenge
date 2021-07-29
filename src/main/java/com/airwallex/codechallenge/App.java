@@ -3,6 +3,7 @@ package com.airwallex.codechallenge;
 import com.airwallex.codechallenge.monitor.Monitor;
 import com.airwallex.codechallenge.monitor.MovingAverageMonitor;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
+import com.airwallex.codechallenge.monitor.alert.SpotChangeAlert;
 import com.airwallex.codechallenge.reader.ConfigReader;
 import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
 import com.airwallex.codechallenge.writer.jsonwriter.JsonWriter;
@@ -85,8 +86,9 @@ public class App {
           monitor -> monitor.processRow(conversionRate).getAlertsIfAny().forEach(
             alert -> {
               logger.info(alert.toString());
-              writer.writeLine(alert.toJson());
+              if (alert instanceof SpotChangeAlert) writer.writeLine(alert.toJson());
             }));
+
         nDataPoints++;
       }
     }
