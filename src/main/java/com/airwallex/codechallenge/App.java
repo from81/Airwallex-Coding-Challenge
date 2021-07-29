@@ -76,18 +76,19 @@ public class App {
     );
     logger.debug(msg);
 
+    // while input file has next line, insert into each dataStore, check for alerts, and write alerts if needed
     while (reader.hasNextLine()) {
       Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
 
       if (conversionRateMaybe.isPresent()) {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
 
-        // insert conversionRate into each data store, which will also evaluate if alert should be returned
+        // insert conversionRate into each data store, and check if there are any alerts to be generated
         for (DataStore ds : dataStores) {
-          Optional<Alert> maybeAlert = ds.insertMaybeAlert(conversionRate);
+          ds.insert(conversionRate);
+          ArrayList<Alert> alerts = ds.checkAllAlerts();
 
-          if (maybeAlert.isPresent()) {
-            Alert alert = maybeAlert.get();
+          for (Alert alert: alerts) {
             logger.info(alert.toString());
             writer.writeLine(alert.toJson());
           }

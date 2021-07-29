@@ -3,19 +3,27 @@ package com.airwallex.codechallenge.dataStore;
 import com.airwallex.codechallenge.dataStore.alert.Alert;
 import com.airwallex.codechallenge.dataStore.alert.SpotChangeAlert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Optional;
 import java.util.PriorityQueue;
 
 public class MovingAverageQueue extends DataStore {
+  private static final Logger logger = LogManager.getLogger();
   private static final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
   private static final Hashtable<String, Pair<Double, Integer>> queueInfo = new Hashtable<>();
   private static int queueSize;
   private static float pctChangeThreshold;
   private static MovingAverageQueue instance = null;
+  private static CurrencyConversionRate lastData = null;
 
   private MovingAverageQueue(int windowSize, float threshold) {
     queueSize = windowSize;
@@ -30,9 +38,8 @@ public class MovingAverageQueue extends DataStore {
   }
 
   public void insert(CurrencyConversionRate conversionRate) {
+    lastData = conversionRate;
     String currencyPair = conversionRate.getCurrencyPair();
-    double rate = conversionRate.getRate();
-    Instant ts = conversionRate.getTimestamp();
 
     // get or create priority queue for the currency pair
     PriorityQueue<Pair<Instant, CurrencyConversionRate>> q;
@@ -52,24 +59,40 @@ public class MovingAverageQueue extends DataStore {
       currentQueueSize += 1;
     }
 
-    // update queue and queueinfo
-    q.add(Pair.with(ts, conversionRate));
+    // update queue and queueInfo
+    q.add(Pair.with(conversionRate.getTimestamp(), conversionRate));
     queues.put(currencyPair, q);
-    queueInfo.put(currencyPair, Pair.with(cumsum+rate, currentQueueSize));
+    queueInfo.put(currencyPair, Pair.with(cumsum + conversionRate.getRate(), currentQueueSize));
   }
 
-  public Optional<Alert> insertMaybeAlert(CurrencyConversionRate conversionRate) {
-    this.insert(conversionRate);
+  public ArrayList<Alert> checkAllAlerts() {
+    ArrayList<Alert> alerts = new ArrayList<>();
+    Method[] methods = this.getClass().getDeclaredMethods();
+    for(Method method : methods){
+      if (Modifier.isPublic(method.getModifiers()) && method.getName().startsWith("checkAlert")) {
+        try {
+          Optional<Alert> maybeAlert = (Optional<Alert>) method.invoke(this);
+          maybeAlert.ifPresent(alerts::add);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          logger.error(e);
+        }
+      }
+    }
+    return alerts;
+  }
 
-    Optional<Double> movingAverageMaybe = this.getCurrentMovingAverage(conversionRate.getCurrencyPair());
+  public Optional<Alert> checkAlertMovingAverage() {
+    if (lastData == null) return Optional.empty();
 
-    if (!movingAverageMaybe.isPresent()) throw new ArithmeticException("Couldn't obtain moving average.");
+    Optional<Double> movingAverageMaybe = this.getCurrentMovingAverage(lastData.getCurrencyPair());
+
+    if (!movingAverageMaybe.isPresent()) return Optional.empty();
 
     double movingAverage = movingAverageMaybe.get();
-    double pctChange = (conversionRate.getRate() - movingAverage) / movingAverage;
+    double pctChange = (lastData.getRate() - movingAverage) / movingAverage;
 
     if (pctChange < pctChangeThreshold) return Optional.empty();
-    else return Optional.of(new SpotChangeAlert(conversionRate, pctChange, movingAverage, pctChangeThreshold));
+    else return Optional.of(new SpotChangeAlert(lastData, pctChange, movingAverage, pctChangeThreshold));
   }
 
   public Optional<Double> getCurrentMovingAverage(String currencyPair) {
