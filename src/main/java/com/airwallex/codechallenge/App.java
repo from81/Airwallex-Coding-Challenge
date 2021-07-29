@@ -1,8 +1,8 @@
 package com.airwallex.codechallenge;
 
-import com.airwallex.codechallenge.dataStore.DataStore;
-import com.airwallex.codechallenge.dataStore.MovingAverageQueue;
-import com.airwallex.codechallenge.dataStore.alert.Alert;
+import com.airwallex.codechallenge.monitor.Monitor;
+import com.airwallex.codechallenge.monitor.MovingAverageMonitor;
+import com.airwallex.codechallenge.monitor.alert.Alert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
 import com.airwallex.codechallenge.reader.ConfigReader;
 import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
@@ -22,7 +22,7 @@ import java.util.Optional;
 public class App {
   private static final Logger logger = LogManager.getLogger("App");
   private static int nDataPoints = 0;
-  private static final ArrayList<DataStore> dataStores = new ArrayList<>();
+  private static final ArrayList<Monitor> MONITORS = new ArrayList<>();
 
   public static void main(String[] args) {
     // initialize log4j2 config
@@ -41,7 +41,7 @@ public class App {
       float pctChangeThreshold = Float.parseFloat(config.get("pct_change_threshold"));
 
       // add data stores here
-      dataStores.add(MovingAverageQueue.create(windowSize, pctChangeThreshold));
+      MONITORS.add(MovingAverageMonitor.create(windowSize, pctChangeThreshold));
 
       run(args[0], windowSize, pctChangeThreshold);
       System.exit(0);
@@ -84,9 +84,9 @@ public class App {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
 
         // insert conversionRate into each data store, and check if there are any alerts to be generated
-        for (DataStore ds : dataStores) {
-          ds.insert(conversionRate);
-          ArrayList<Alert> alerts = ds.checkAllAlerts();
+        for (Monitor monitor : MONITORS) {
+          monitor.processRow(conversionRate);
+          ArrayList<Alert> alerts = monitor.checkAllAlerts();
 
           for (Alert alert: alerts) {
             logger.info(alert.toString());

@@ -1,4 +1,4 @@
-package com.airwallex.codechallenge.dataStore.alert;
+package com.airwallex.codechallenge.monitor.alert;
 
 import org.json.simple.JSONObject;
 

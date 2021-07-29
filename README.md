@@ -68,3 +68,11 @@ to remove build artefacts prior to creating the archive file.
 
 **Note:** We will not consider submissions that are uploaded to Github.
 # Airwallex-Coding-Challenge
+
+- To add a new alert, define the `Alert` class and a `Monitor` class that processes data and generates that `Alert`.
+- `Monitor` is an encapsulation of `Alert` and `Writer`, and requires implementation of `processRow()`, `checkAllAlerts()`.
+  - A monitor does not require or need to use a specified `alert/writer`. 
+  - For example, a `Monitor` can be
+    - A wrapper for an `Alert`, and passes the execution context to alert object through instantiation.
+    - A `Writer` that inserts a row into a database, without producing any `Alert`.
+- In summary, adding a `Monitor` subclass definition (and adding that to `App.MONITORS`) is the smallest unit of work required for adding new monitoring or writing logic. 

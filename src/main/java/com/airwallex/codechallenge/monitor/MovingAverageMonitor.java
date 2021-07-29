@@ -1,7 +1,7 @@
-package com.airwallex.codechallenge.dataStore;
+package com.airwallex.codechallenge.monitor;
 
-import com.airwallex.codechallenge.dataStore.alert.Alert;
-import com.airwallex.codechallenge.dataStore.alert.SpotChangeAlert;
+import com.airwallex.codechallenge.monitor.alert.Alert;
+import com.airwallex.codechallenge.monitor.alert.SpotChangeAlert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,28 +16,34 @@ import java.util.Hashtable;
 import java.util.Optional;
 import java.util.PriorityQueue;
 
-public class MovingAverageQueue extends DataStore {
+public class MovingAverageMonitor extends Monitor {
+  private static final Class<SpotChangeAlert> alertType = SpotChangeAlert.class;
   private static final Logger logger = LogManager.getLogger();
   private static final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
   private static final Hashtable<String, Pair<Double, Integer>> queueInfo = new Hashtable<>();
   private static int queueSize;
   private static float pctChangeThreshold;
-  private static MovingAverageQueue instance = null;
+  private static MovingAverageMonitor instance = null;
   private static CurrencyConversionRate lastData = null;
 
-  private MovingAverageQueue(int windowSize, float threshold) {
+  private MovingAverageMonitor(int windowSize, float threshold) {
     queueSize = windowSize;
     pctChangeThreshold = threshold;
   }
 
-  public static MovingAverageQueue create(int windowSize, float pctChangeThreshold) {
+  public static MovingAverageMonitor create(int windowSize, float pctChangeThreshold) {
     if (instance == null) {
-      instance = new MovingAverageQueue(windowSize, pctChangeThreshold);
+      instance = new MovingAverageMonitor(windowSize, pctChangeThreshold);
     }
     return instance;
   }
 
-  public void insert(CurrencyConversionRate conversionRate) {
+  @Override
+  public Alert getAlertType() {
+    return null;
+  }
+
+  public void processRow(CurrencyConversionRate conversionRate) {
     lastData = conversionRate;
     String currencyPair = conversionRate.getCurrencyPair();
 
