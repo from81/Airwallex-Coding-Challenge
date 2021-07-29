@@ -1,100 +1,106 @@
 package com.airwallex.codechallenge;
 
+import com.airwallex.codechallenge.dataStore.DataStore;
+import com.airwallex.codechallenge.dataStore.MovingAverageQueue;
+import com.airwallex.codechallenge.dataStore.alert.Alert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
 import com.airwallex.codechallenge.reader.ConfigReader;
 import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
 import com.airwallex.codechallenge.writer.jsonwriter.JsonWriter;
-
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.json.simple.parser.ParseException;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class App {
   private static final Logger logger = LogManager.getLogger("App");
+  private static int nDataPoints = 0;
+  private static final ArrayList<DataStore> dataStores = new ArrayList<>();
 
   public static void main(String[] args) {
+    // initialize log4j2 config
     Configurator.initialize(null, "src/resources/log4j2.properties");
-    int nDataPoints = 0;
-    long startTime = System.nanoTime();
+
     if (args.length == 0) {
       throw new IndexOutOfBoundsException("Supply input file as an argument.");
     }
-    String file = args[0];
-
     try {
-      // create reader, movingaverage queue, writer
-      JsonReader reader = new JsonReader(file);
-      ConfigReader config = new ConfigReader("/Users/Kai/Dropbox/Documents/Code/airwallex-code-challenge/src/resources/config.properties");
-      JsonWriter writer = new JsonWriter();
+      // open config file
+      Path configDir = Paths.get(System.getProperty("user.dir"), "/src/resources/config.properties");
+      ConfigReader config = new ConfigReader(configDir.toString());
 
       // read parameters
       int windowSize = Integer.parseInt(config.get("moving_average_window"));
-      MovingAverageQueue movingAverageQueue = new MovingAverageQueue(windowSize);
-      Float pctChangeThreshold = Float.valueOf(config.get("pct_change_threshold"));
-      String msg =
-          String.format(
-              "Program starting with parameters:\n\tInput File: %s\n\tOutput File: %s\n\tMoving Average Window Size: %d\n\tPercent Change Threshold: %.2f",
-              reader.getPath(), writer.getPath(), windowSize, pctChangeThreshold);
-      logger.debug(msg);
+      float pctChangeThreshold = Float.parseFloat(config.get("pct_change_threshold"));
 
-      // create output directory if it does not exist
-      Path baseDir = Paths.get(System.getProperty("user.dir"));
-      File directory = new File(String.valueOf(Paths.get(baseDir.toString(), "output")));
-      if (! directory.exists()) directory.mkdir();
-      assert directory.exists();
+      // add data stores here
+      dataStores.add(MovingAverageQueue.create(windowSize, pctChangeThreshold));
 
-      while (reader.hasNextLine()) {
-        nDataPoints++;
-        Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
-        CurrencyConversionRate conversionRate = conversionRateMaybe.get();
-        movingAverageQueue.insert(conversionRate);
-
-        Optional<Double> movingAverageMaybe = movingAverageQueue.getCurrentMovingAverage(conversionRate.getCurrencyPair());
-        Double pctChange;
-        Double movingAverage;
-
-        if (movingAverageMaybe.isPresent()) {
-          movingAverage = movingAverageMaybe.get();
-          pctChange = (conversionRate.getRate() - movingAverage) / movingAverage;
-        } else {
-          movingAverage = conversionRate.getRate();
-          pctChange = 0.0;
-        }
-
-        if (pctChange >= pctChangeThreshold) {
-          // write to log
-          logger.info(
-              String.format(
-                  "Significant rate change (>= %.2f) recorded:\n\tCurrency Pair  : %s\n\tAverage rate   : %.6f\n\tNew spot rate  : %.6f\n\tPercent change : %.2f%%",
-                  pctChangeThreshold,
-                  conversionRate.getCurrencyPair(),
-                  movingAverage,
-                  conversionRate.getRate(),
-                  pctChange));
-
-          // write to json
-          JSONObject obj = new JSONObject();
-          obj.put("currencyPair", conversionRate.getCurrencyPair());
-          obj.put("timestamp", conversionRate.getTimestamp().getEpochSecond() + conversionRate.getTimestamp().getNano());
-          obj.put("alert", "spotChange");
-          writer.writeLine(obj);
-        }
-      }
-      writer.close();
-      double elapsedTime = (double) ((System.nanoTime() - startTime) / 1_000_000_000.0);
-      logger.info(String.format("%d data points processed in %.6f seconds.", nDataPoints, elapsedTime));
+      run(args[0], windowSize, pctChangeThreshold);
       System.exit(0);
     } catch (IOException | ParseException e) {
-      e.printStackTrace();
+      logger.error(e.getMessage());
       System.exit(1);
     }
+  }
+
+  public static void run(String inputFile, int windowSize, Float pctChangeThreshold)
+          throws ParseException, IOException {
+    long startTime = System.nanoTime();
+
+    // create output and logs directory if they do not exist
+    Path baseDir = Paths.get(System.getProperty("user.dir"));
+    File outputDirectory = new File(String.valueOf(Paths.get(baseDir.toString(), "output")));
+    if (!outputDirectory.exists()) outputDirectory.mkdir();
+    File logDirectory = new File(String.valueOf(Paths.get(baseDir.toString(), "logs")));
+    if (!logDirectory.exists()) logDirectory.mkdir();
+
+    // create reader and writer
+    JsonReader reader = new JsonReader(inputFile);
+    JsonWriter writer = new JsonWriter();
+
+    // log params
+    String msg = String.format(
+            "Program starting with parameters:\n\tInput File: %s\n\tOutput File: %s\n\tMoving Average Window Size: %d\n\tPercent Change Threshold: %.2f",
+            reader.getPath(),
+            writer.getPath(),
+            windowSize,
+            pctChangeThreshold
+    );
+    logger.debug(msg);
+
+    while (reader.hasNextLine()) {
+      Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
+
+      if (conversionRateMaybe.isPresent()) {
+        CurrencyConversionRate conversionRate = conversionRateMaybe.get();
+
+        // insert conversionRate into each data store, which will also evaluate if alert should be returned
+        for (DataStore ds : dataStores) {
+          Optional<Alert> maybeAlert = ds.insertMaybeAlert(conversionRate);
+
+          if (maybeAlert.isPresent()) {
+            Alert alert = maybeAlert.get();
+            logger.info(alert.toString());
+            writer.writeLine(alert.toJson());
+          }
+        }
+        nDataPoints++;
+      }
+    }
+
+    // performance stats
+    logger.debug(
+        String.format(
+            "%d data points processed in %.6f seconds.",
+            nDataPoints, (System.nanoTime() - startTime) / 1_000_000_000.0));
+    writer.close();
   }
 }

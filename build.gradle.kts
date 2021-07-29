@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    base
     java
     kotlin("jvm") version "1.3.21"
     application
