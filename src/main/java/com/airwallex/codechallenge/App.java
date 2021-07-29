@@ -13,6 +13,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.json.simple.parser.ParseException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,14 +46,13 @@ public class App {
 
       run(args[0], windowSize, pctChangeThreshold);
       System.exit(0);
-    } catch (IOException | ParseException e) {
+    } catch (IOException e) {
       logger.error(e.getMessage());
       System.exit(1);
     }
   }
 
-  public static void run(String inputFile, int windowSize, Float pctChangeThreshold)
-          throws ParseException, IOException {
+  public static void run(String inputFile, int windowSize, Float pctChangeThreshold) throws IOException {
     long startTime = System.nanoTime();
 
     // create output and logs directory if they do not exist
@@ -76,32 +76,33 @@ public class App {
     );
     logger.debug(msg);
 
-    // while input file has next line, insert into each dataStore, check for alerts, and write alerts if needed
+    // while input file has next line, process each data point using a subclass of Monitor, check for alerts, and write alerts if needed
     while (reader.hasNextLine()) {
       Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
 
       if (conversionRateMaybe.isPresent()) {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
 
-        // insert conversionRate into each data store, and check if there are any alerts to be generated
-        for (Monitor monitor : MONITORS) {
-          monitor.processRow(conversionRate);
-          ArrayList<Alert> alerts = monitor.checkAllAlerts();
-
-          for (Alert alert: alerts) {
-            logger.info(alert.toString());
-            writer.writeLine(alert.toJson());
-          }
-        }
+        // process each row and check if there are any alerts
+        MONITORS.forEach(
+                monitor -> {
+                  monitor.processRow(conversionRate);
+                  monitor.checkAllAlerts().forEach(
+                          alert -> {
+                            logger.info(alert.toString());
+                            writer.writeLine(alert.toJson());
+                          });
+                });
         nDataPoints++;
       }
     }
+
+    writer.close();
 
     // performance stats
     logger.debug(
         String.format(
             "%d data points processed in %.6f seconds.",
             nDataPoints, (System.nanoTime() - startTime) / 1_000_000_000.0));
-    writer.close();
   }
 }

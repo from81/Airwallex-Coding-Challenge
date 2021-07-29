@@ -75,4 +75,4 @@ to remove build artefacts prior to creating the archive file.
   - For example, a `Monitor` can be
     - A wrapper for an `Alert`, and passes the execution context to alert object through instantiation.
     - A `Writer` that inserts a row into a database, without producing any `Alert`.
-- In summary, adding a `Monitor` subclass definition (and adding that to `App.MONITORS`) is the smallest unit of work required for adding new monitoring or writing logic. 
+- In summary, adding a `Monitor` subclass definition (and adding that to `App.MONITORS`) is the smallest unit of work required for adding new monitoring or writing logic.
