@@ -30,7 +30,7 @@ public class App {
       Path configDir = Paths.get(System.getProperty("user.dir"), "/src/resources/config.properties");
       ConfigReader config = new ConfigReader(configDir.toString());
 
-      // create output and logs directory if they do not exist
+      // create output directory if it does not exist
       File directory = new File(Paths.get(baseDir.toString(), "output").toString());
       if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
 
