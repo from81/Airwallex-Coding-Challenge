@@ -25,7 +25,6 @@ public abstract class Monitor {
     Arrays.stream(this.getClass().getDeclaredMethods()).parallel().forEach(
             checkAlertMethodMaybe -> {
               if (checkAlertMethodMaybe.getName().startsWith("checkAlert"))
-//                checkAlertMethodMaybe.
                 try {
                   Optional<Alert> maybeAlert = (Optional<Alert>) checkAlertMethodMaybe.invoke(this);
                   maybeAlert.ifPresent(alerts::add);

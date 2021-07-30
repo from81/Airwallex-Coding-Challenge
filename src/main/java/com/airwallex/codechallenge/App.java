@@ -23,8 +23,10 @@ public class App {
     Configurator.initialize(null, "src/resources/log4j2.properties");
 
     if (args.length == 0) {
-      throw new IndexOutOfBoundsException("Supply input file as an argument.");
+      logger.error("Supply input file as an argument.");
+      System.exit(1);
     }
+
     try {
       // open config file
       Path configDir = Paths.get(System.getProperty("user.dir"), "/src/resources/config.properties");
@@ -34,14 +36,13 @@ public class App {
       File directory = new File(Paths.get(baseDir.toString(), "output").toString());
       if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
 
-      // add data stores here
+      // add initialized monitors here
       MONITORS.add(new MovingAverageMonitor(args[0], config));
 
-       (MONITORS).parallelStream().forEach(Monitor::run);
-      // MONITORS.forEach(Monitor::run);
+      // run all monitors
+      (MONITORS).parallelStream().forEach(Monitor::run);
 
       System.exit(0);
-
     } catch (IOException e) {
       logger.error(e.getMessage());
       System.exit(1);

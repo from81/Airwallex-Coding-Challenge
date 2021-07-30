@@ -117,8 +117,7 @@ public class MovingAverageMonitor extends Monitor {
       if (conversionRateMaybe.isPresent()) {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
         this.processRow(conversionRate);
-        this.getAlertsIfAny()
-            .forEach(
+        this.getAlertsIfAny().parallelStream().forEach(
                 alert -> {
                   logger.info(alert);
                   if (alert instanceof ExecutableAlert) ((ExecutableAlert) alert).execute();
@@ -131,6 +130,9 @@ public class MovingAverageMonitor extends Monitor {
     logger.debug(
             String.format(
                     "%d data points processed in %.6f seconds.",
-                    nDataPoints, (System.nanoTime() - startTime) / 1_000_000_000.0));
+                    nDataPoints,
+                    (System.nanoTime() - startTime) / 1_000_000_000.0
+            )
+    );
   }
 }
