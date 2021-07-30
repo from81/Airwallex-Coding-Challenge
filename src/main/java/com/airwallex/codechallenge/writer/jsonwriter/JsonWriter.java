@@ -1,5 +1,6 @@
 package com.airwallex.codechallenge.writer.jsonwriter;
 
+import com.airwallex.codechallenge.writer.MessageWriter;
 import org.json.simple.JSONObject;
 
 import java.io.File;
@@ -12,14 +13,16 @@ import java.time.Instant;
 public class JsonWriter extends MessageWriter {
   PrintWriter writer;
 
-  public JsonWriter() throws IOException {
+  public JsonWriter(String path) throws IOException {
     // initialize parameters
     String timestamp = Instant.now().toString();
     if (timestamp.contains("T")) {
       timestamp = timestamp.substring(0, timestamp.indexOf("T"));
     }
+
+    // assume `path` is relative path
     super.filename = String.format("%s.jsonl", timestamp);
-    super.outputPath = Paths.get(System.getProperty("user.dir"), "output", super.filename);
+    super.outputPath = Paths.get(path, super.filename);
 
     // file is created if it doesn't exist
     File file = new File(String.valueOf(super.outputPath));

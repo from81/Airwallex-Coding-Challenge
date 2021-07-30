@@ -1,41 +1,37 @@
 package com.airwallex.codechallenge.monitor;
 
 import com.airwallex.codechallenge.monitor.alert.Alert;
+import com.airwallex.codechallenge.monitor.alert.ExecutableAlert;
 import com.airwallex.codechallenge.monitor.alert.SpotChangeAlert;
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
+import com.airwallex.codechallenge.reader.ConfigReader;
+import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Optional;
 import java.util.PriorityQueue;
 
 public class MovingAverageMonitor extends Monitor {
-  private static final Class<SpotChangeAlert> alertType = SpotChangeAlert.class;
   private static final Logger logger = LogManager.getLogger();
+  private static final Class<SpotChangeAlert> alertType = SpotChangeAlert.class;
   private static final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
   private static final Hashtable<String, Pair<Double, Integer>> queueInfo = new Hashtable<>();
+  private final String inputFile;
+  private final ConfigReader config;
   private static int queueSize;
   private static float pctChangeThreshold;
-  private static MovingAverageMonitor instance = null;
   private static CurrencyConversionRate lastData = null;
 
-  private MovingAverageMonitor(int windowSize, float threshold) {
-    queueSize = windowSize;
-    pctChangeThreshold = threshold;
-  }
-
-  public static MovingAverageMonitor create(int windowSize, float pctChangeThreshold) {
-    if (instance == null) {
-      instance = new MovingAverageMonitor(windowSize, pctChangeThreshold);
-    }
-    return instance;
+  public MovingAverageMonitor(String inputFile, ConfigReader config) {
+    this.inputFile = inputFile;
+    this.config = config;
+    queueSize = Integer.parseInt(config.get("moving_average_window"));
+    pctChangeThreshold = Float.parseFloat(config.get("pct_change_threshold"));
   }
 
   @Override
@@ -74,24 +70,7 @@ public class MovingAverageMonitor extends Monitor {
     return this;
   }
 
-  @Override
-  public ArrayList<Alert> getAlertsIfAny() {
-    ArrayList<Alert> alerts = new ArrayList<>();
-    Method[] methods = this.getClass().getDeclaredMethods();
-    for(Method method : methods){
-      if (Modifier.isPublic(method.getModifiers()) && method.getName().startsWith("checkAlert")) {
-        try {
-          Optional<Alert> maybeAlert = (Optional<Alert>) method.invoke(this);
-          maybeAlert.ifPresent(alerts::add);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          logger.error(e);
-        }
-      }
-    }
-    return alerts;
-  }
-
-  public Optional<Alert> checkAlertMovingAverage() {
+  public Optional<Alert> checkAlertMovingAverage() throws IOException {
     if (lastData == null) return Optional.empty();
 
     Optional<Double> movingAverageMaybe = this.getCurrentMovingAverage(lastData.getCurrencyPair());
@@ -108,5 +87,50 @@ public class MovingAverageMonitor extends Monitor {
   public Optional<Double> getCurrentMovingAverage(String currencyPair) {
     Pair<Double, Integer> currencyInfo = queueInfo.getOrDefault(currencyPair, null);
     return (currencyInfo != null) ? Optional.of(currencyInfo.getValue0() / currencyInfo.getValue1()) : Optional.empty();
+  }
+
+  @Override
+  public void run() {
+    int nDataPoints = 0;
+    long startTime = System.nanoTime();
+
+    // read parameters
+    int windowSize = Integer.parseInt(config.get("moving_average_window"));
+    float pctChangeThreshold = Float.parseFloat(config.get("pct_change_threshold"));
+
+    // create reader and writer
+    JsonReader reader = new JsonReader(inputFile);
+
+    // log params
+    String msg = String.format(
+            "Program starting with parameters:\n\tMoving Average Window Size: %d\n\tPercent Change Threshold: %.2f",
+            windowSize,
+            pctChangeThreshold
+    );
+    logger.debug(msg);
+
+    // while input file has a next line, process each data point.
+    // log and execute any alerts that might be returned
+    while (reader.hasNextLine()) {
+      Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
+
+      if (conversionRateMaybe.isPresent()) {
+        CurrencyConversionRate conversionRate = conversionRateMaybe.get();
+        this.processRow(conversionRate);
+        this.getAlertsIfAny()
+            .forEach(
+                alert -> {
+                  logger.info(alert);
+                  if (alert instanceof ExecutableAlert) ((ExecutableAlert) alert).execute();
+                });
+        nDataPoints++;
+      }
+    }
+
+    // performance stats
+    logger.debug(
+            String.format(
+                    "%d data points processed in %.6f seconds.",
+                    nDataPoints, (System.nanoTime() - startTime) / 1_000_000_000.0));
   }
 }

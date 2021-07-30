@@ -1,4 +1,4 @@
-package com.airwallex.codechallenge.writer.jsonwriter;
+package com.airwallex.codechallenge.writer;
 
 import org.json.simple.JSONObject;
 

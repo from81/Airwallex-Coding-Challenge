@@ -2,11 +2,7 @@ package com.airwallex.codechallenge;
 
 import com.airwallex.codechallenge.monitor.Monitor;
 import com.airwallex.codechallenge.monitor.MovingAverageMonitor;
-import com.airwallex.codechallenge.input.CurrencyConversionRate;
-import com.airwallex.codechallenge.monitor.alert.SpotChangeAlert;
 import com.airwallex.codechallenge.reader.ConfigReader;
-import com.airwallex.codechallenge.reader.jsonreader.JsonReader;
-import com.airwallex.codechallenge.writer.jsonwriter.JsonWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -16,13 +12,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Optional;
 
 public class App {
   private static final Logger logger = LogManager.getLogger("App");
-  private static int nDataPoints = 0;
-  private static final ArrayList<Monitor> MONITORS = new ArrayList<>();
   private static final Path baseDir = Paths.get(System.getProperty("user.dir"));
+  private static final ArrayList<Monitor> MONITORS = new ArrayList<>();
 
   public static void main(String[] args) {
     // initialize log4j2 config
@@ -36,71 +30,21 @@ public class App {
       Path configDir = Paths.get(System.getProperty("user.dir"), "/src/resources/config.properties");
       ConfigReader config = new ConfigReader(configDir.toString());
 
-      // read parameters
-      int windowSize = Integer.parseInt(config.get("moving_average_window"));
-      float pctChangeThreshold = Float.parseFloat(config.get("pct_change_threshold"));
+      // create output and logs directory if they do not exist
+      File directory = new File(Paths.get(baseDir.toString(), "output").toString());
+      if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
 
       // add data stores here
-      MONITORS.add(MovingAverageMonitor.create(windowSize, pctChangeThreshold));
+      MONITORS.add(new MovingAverageMonitor(args[0], config));
 
-      run(args[0], windowSize, pctChangeThreshold);
+       (MONITORS).parallelStream().forEach(Monitor::run);
+      // MONITORS.forEach(Monitor::run);
+
       System.exit(0);
+
     } catch (IOException e) {
       logger.error(e.getMessage());
       System.exit(1);
     }
-  }
-
-  private static void createDirectoryIfNotExists(String directoryName) {
-    File directory = new File(Paths.get(baseDir.toString(), directoryName).toString());
-    if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
-  }
-
-  public static void run(String inputFile, int windowSize, Float pctChangeThreshold) throws IOException {
-    long startTime = System.nanoTime();
-
-    // create output and logs directory if they do not exist
-    createDirectoryIfNotExists("output");
-
-    // create reader and writer
-    JsonReader reader = new JsonReader(inputFile);
-    JsonWriter writer = new JsonWriter();
-
-    // log params
-    String msg = String.format(
-            "Program starting with parameters:\n\tInput File: %s\n\tOutput File: %s\n\tMoving Average Window Size: %d\n\tPercent Change Threshold: %.2f",
-            reader.getPath(),
-            writer.getPath(),
-            windowSize,
-            pctChangeThreshold
-    );
-    logger.debug(msg);
-
-    // while input file has next line, process each data point using a subclass of Monitor, check for alerts, and write alerts if needed
-    while (reader.hasNextLine()) {
-      Optional<CurrencyConversionRate> conversionRateMaybe = reader.readLine();
-
-      if (conversionRateMaybe.isPresent()) {
-        CurrencyConversionRate conversionRate = conversionRateMaybe.get();
-        nDataPoints++;
-
-        // process each row and check if there are any alerts
-        MONITORS.forEach(
-          monitor -> monitor.processRow(conversionRate).getAlertsIfAny().forEach(
-            alert -> {
-              // Output to log. If it is spot change alerts, then write to jsonline file.
-              logger.info(alert.toString());
-              if (alert instanceof SpotChangeAlert) writer.writeLine(alert.toJson());
-            }));
-      }
-    }
-
-    writer.close();
-
-    // performance stats
-    logger.debug(
-        String.format(
-            "%d data points processed in %.6f seconds.",
-            nDataPoints, (System.nanoTime() - startTime) / 1_000_000_000.0));
   }
 }

@@ -1,6 +1,7 @@
 package com.airwallex.codechallenge.reader.jsonreader;
 
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
+import com.airwallex.codechallenge.reader.ConversionRateReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
@@ -17,28 +18,30 @@ import java.util.Optional;
 import java.util.Scanner;
 
 public class JsonReader extends ConversionRateReader {
-  JSONParser parser = new JSONParser();
+  private final JSONParser parser = new JSONParser();
   private static final Logger logger = LogManager.getLogger();
 
   FileInputStream inputStream;
   Scanner sc;
 
-  public JsonReader(String path) throws FileNotFoundException {
+  public JsonReader(String path) {
     Path outputPath = FileSystems.getDefault().getPath(path).normalize().toAbsolutePath();
-
     super.filename = outputPath.getFileName().toString();
     super.inputPath = outputPath;
 
-    this.inputStream = new FileInputStream(super.inputPath.toString());
-    this.sc = new Scanner(inputStream, "UTF-8");
+    if (!super.inputPath.getParent().toFile().exists()) super.inputPath.toFile().mkdirs();
+
+    try {
+      this.inputStream = new FileInputStream(super.inputPath.toString());
+      this.sc = new Scanner(inputStream, "UTF-8");
+      logger.debug("Reader created: " + super.inputPath.toString());
+    } catch (FileNotFoundException e) {
+      logger.error(e.getMessage());
+    }
   }
 
   public Boolean hasNextLine() {
     return sc.hasNextLine();
-  }
-
-  public String getPath() {
-    return super.inputPath.toString();
   }
 
   @Override
