@@ -1,6 +1,5 @@
 package com.airwallex.codechallenge;
 
-import com.airwallex.codechallenge.monitor.Monitor;
 import com.airwallex.codechallenge.monitor.MovingAverageMonitor;
 import com.airwallex.codechallenge.reader.ConfigReader;
 import org.apache.logging.log4j.LogManager;
@@ -11,12 +10,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class App {
   private static final Logger logger = LogManager.getLogger("App");
   private static final Path baseDir = Paths.get(System.getProperty("user.dir"));
-  private static final ArrayList<Monitor> MONITORS = new ArrayList<>();
+  private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
   public static void main(String[] args) {
     // initialize log4j2 config
@@ -37,14 +39,17 @@ public class App {
       if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
 
       // add initialized monitors here
-      MONITORS.add(new MovingAverageMonitor(args[0], config));
+      executorService.execute(new MovingAverageMonitor(args[0], config));
+      executorService.execute(new MovingAverageMonitor(args[1], config));
 
-      // run all monitors
-      (MONITORS).parallelStream().forEach(Monitor::run);
-
-      System.exit(0);
-    } catch (IOException e) {
+      executorService.shutdown();
+      boolean finished = executorService.awaitTermination(10, TimeUnit.MINUTES);
+      System.exit((finished) ? 0 : 1);
+    } catch (IOException | InterruptedException e) {
       logger.error(e.getMessage());
+      System.exit(1);
+    } catch (Exception e) {
+      e.printStackTrace();
       System.exit(1);
     }
   }

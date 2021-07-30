@@ -16,7 +16,7 @@ import java.util.Hashtable;
 import java.util.Optional;
 import java.util.PriorityQueue;
 
-public class MovingAverageMonitor extends Monitor {
+public class MovingAverageMonitor extends Monitor implements Runnable {
   private static final Logger logger = LogManager.getLogger();
   private static final Class<SpotChangeAlert> alertType = SpotChangeAlert.class;
   private static final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
