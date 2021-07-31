@@ -85,3 +85,5 @@ Key classes and objects
 - `Alert`: Alert that will be caught and printed by the logger. Requires `.toString()` method implementation.
     - `ExecutebleAlert`: Has the method `.execute()` which will be called automatically. For example, if an alert needs to be logged or written to a `.jsonline` file, insert that logic in  `.execute()` method.
         - `SpotChangeAlert`: Implementation of `ExecutableAlert`
+
+![misc/runtime1.png](misc/runtime1.png)
