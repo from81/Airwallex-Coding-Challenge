@@ -25,16 +25,16 @@ public class JsonReader extends ConversionRateReader {
   Scanner sc;
 
   public JsonReader(String path) {
-    Path outputPath = FileSystems.getDefault().getPath(path).normalize().toAbsolutePath();
-    super.filename = outputPath.getFileName().toString();
-    super.inputPath = outputPath;
+    Path inputPath = FileSystems.getDefault().getPath(path).normalize().toAbsolutePath();
+    super.filename = inputPath.getFileName().toString();
+    super.inputPath = inputPath;
 
     if (!super.inputPath.getParent().toFile().exists()) super.inputPath.toFile().mkdirs();
 
     try {
       this.inputStream = new FileInputStream(super.inputPath.toString());
       this.sc = new Scanner(inputStream, "UTF-8");
-      logger.debug("Reader created: " + super.inputPath.toString());
+      logger.debug("Reader created: " + super.inputPath.toFile().getAbsolutePath());
     } catch (FileNotFoundException e) {
       logger.error(e.getMessage());
     }

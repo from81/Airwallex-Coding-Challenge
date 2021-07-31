@@ -10,9 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.concurrent.*;
 
 public class App {
   private static final Logger logger = LogManager.getLogger("App");
@@ -27,6 +26,7 @@ public class App {
       logger.error("Supply input file as an argument.");
       System.exit(1);
     }
+    logger.info(String.format("%d input files received: %s", args.length, Arrays.toString(args)));
 
     try {
       // open config file
@@ -38,11 +38,16 @@ public class App {
       if (directory.mkdir()) logger.debug("Directory created: " + directory.getAbsolutePath());
 
       // add initialized monitors here
-      executorService.execute(new MovingAverageMonitor(args[0], config));
-      executorService.execute(new MovingAverageMonitor(args[1], config));
+      Runnable[] tasks = {
+              new MovingAverageMonitor(args[0], config),
+              new MovingAverageMonitor(args[1], config)
+      };
+
+      // run all monitors / tasks
+      Arrays.stream(tasks).parallel().forEach(executorService::execute);
 
       executorService.shutdown();
-      boolean finished = executorService.awaitTermination(10, TimeUnit.MINUTES);
+      boolean finished = finished = executorService.awaitTermination(10, TimeUnit.MINUTES);
       System.exit((finished) ? 0 : 1);
     } catch (IOException | InterruptedException e) {
       logger.error(e.getMessage());
