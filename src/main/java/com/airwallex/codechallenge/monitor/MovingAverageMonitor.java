@@ -116,8 +116,7 @@ public class MovingAverageMonitor extends Monitor implements Runnable {
 
       if (conversionRateMaybe.isPresent()) {
         CurrencyConversionRate conversionRate = conversionRateMaybe.get();
-        this.processRow(conversionRate);
-        this.getAlertsIfAny().parallelStream().forEach(
+        this.processRow(conversionRate).getAlertsIfAny().parallelStream().forEach(
                 alert -> {
                   logger.info(alert);
                   if (alert instanceof ExecutableAlert) ((ExecutableAlert) alert).execute();
