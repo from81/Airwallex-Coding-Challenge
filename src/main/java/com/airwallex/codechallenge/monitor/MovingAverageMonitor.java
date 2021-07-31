@@ -19,13 +19,13 @@ import java.util.PriorityQueue;
 public class MovingAverageMonitor extends Monitor implements Runnable {
   private static final Logger logger = LogManager.getLogger();
   private static final Class<SpotChangeAlert> alertType = SpotChangeAlert.class;
-  private static final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
-  private static final Hashtable<String, Pair<Double, Integer>> queueInfo = new Hashtable<>();
+  private final Hashtable<String, PriorityQueue<Pair<Instant, CurrencyConversionRate>>> queues = new Hashtable<>();
+  private final Hashtable<String, Pair<Double, Integer>> queueInfo = new Hashtable<>();
   private final String inputFile;
   private final ConfigReader config;
-  private static int queueSize;
-  private static float pctChangeThreshold;
-  private static CurrencyConversionRate lastData = null;
+  private final int queueSize;
+  private final float pctChangeThreshold;
+  private CurrencyConversionRate lastData = null;
 
   public MovingAverageMonitor(String inputFile, ConfigReader config) {
     this.inputFile = inputFile;
@@ -91,7 +91,7 @@ public class MovingAverageMonitor extends Monitor implements Runnable {
 
   @Override
   public void run() {
-    int nDataPoints = 0;
+    Integer nDataPoints = 0;
     long startTime = System.nanoTime();
 
     // read parameters
@@ -126,12 +126,11 @@ public class MovingAverageMonitor extends Monitor implements Runnable {
     }
 
     // performance stats
-    logger.debug(
-            String.format(
-                    "%d data points processed in %.6f seconds.",
-                    nDataPoints,
-                    (System.nanoTime() - startTime) / 1_000_000_000.0
-            )
+    String result = String.format(
+            "%d data points processed in %.6f seconds.",
+            nDataPoints,
+            (System.nanoTime() - startTime) / 1_000_000_000.0
     );
+    logger.debug(result);
   }
 }
