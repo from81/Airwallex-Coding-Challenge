@@ -67,12 +67,21 @@ Please execute
 to remove build artefacts prior to creating the archive file.
 
 **Note:** We will not consider submissions that are uploaded to Github.
-# Airwallex-Coding-Challenge
 
-- To add a new alert, define the `Alert` class and a `Monitor` class that processes data and generates that `Alert`.
-- `Monitor` is an encapsulation of `Alert` and `Writer`, and requires implementation of `processRow()`, `checkAllAlerts()`.
-  - A monitor does not require or need to use a specified `alert/writer`. 
-  - For example, a `Monitor` can be
-    - A wrapper for an `Alert`, and passes the execution context to alert object through instantiation.
-    - A `Writer` that inserts a row into a database, without producing any `Alert`.
-- In summary, adding a `Monitor` subclass definition (and adding that to `App.MONITORS`) is the smallest unit of work required for adding new monitoring or writing logic.
+---
+
+# Design and Justification
+
+Smallest unit of task in the program is embodied by the Monitor abstract class, which requires implementation of `processRow()` and `run()`.
+
+Justification
+- A task in the context of log parsing will use a reader, and / or writer and optionally generate any alerts.
+- For example, you may want a monitor to only act on certain type of data and insert the result to a database, but not need to print anything to the console.
+- We can't know beforehand whether a task will generate logs, generate and act on alerts, or both. Whether and how each subclass of `Monitor` uses an alert or processes a row is up to the designer. The only requirement is to coordinate the execution under a single call to `.run()` method.
+
+Key classes and objects
+- `Monitor`: Abstract class for any unit of task. 
+    - `MovingAverageMonitor`: Implements `Monitor` and extends `Runnable`. Encapsulation around `reader` and `writer` which will be used to generate `alert`.
+- `Alert`: Alert that will be caught and printed by the logger. Requires `.toString()` method implementation.
+    - `ExecutebleAlert`: Has the method `.execute()` which will be called automatically. For example, if an alert needs to be logged or written to a `.jsonline` file, insert that logic in  `.execute()` method.
+        - `SpotChangeAlert`: Implementation of `ExecutableAlert`
