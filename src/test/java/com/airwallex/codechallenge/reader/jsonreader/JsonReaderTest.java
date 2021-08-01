@@ -1,7 +1,6 @@
 package com.airwallex.codechallenge.reader.jsonreader;
 
 import com.airwallex.codechallenge.input.CurrencyConversionRate;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
@@ -28,9 +27,7 @@ public class JsonReaderTest {
   @DisplayName("Specifying a file that does not exist should throw FileNotFoundError")
   public void testInvalidInput() {
     String input = "example/fake.jsonl";
-    assertThrows(FileNotFoundException.class, () -> {
-      JsonReader reader = new JsonReader(input);
-    });
+    assertThrows(FileNotFoundException.class, () -> new JsonReader(input));
   }
 
   @Test
