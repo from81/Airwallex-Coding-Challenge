@@ -19,6 +19,7 @@ public class App {
   private static final ExecutorService executorService = Executors.newCachedThreadPool();
 
   public static void main(String[] args) {
+
     // initialize log4j2 config
     Configurator.initialize(null, "src/resources/log4j2.properties");
 
