@@ -54,6 +54,7 @@ tasks.withType(JacocoReport::class.java).all {
     reports {
         csv.isEnabled = false
         xml.isEnabled = true
+        xml.destination = file("output/reports/coverage/jacoco.xml")
         html.isEnabled = true
         html.destination = file("output/reports/coverage")
     }
