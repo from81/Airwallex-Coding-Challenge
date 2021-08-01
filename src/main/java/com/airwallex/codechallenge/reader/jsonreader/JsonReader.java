@@ -24,7 +24,7 @@ public class JsonReader extends ConversionRateReader {
   FileInputStream inputStream;
   Scanner sc;
 
-  public JsonReader(String path) {
+  public JsonReader(String path) throws FileNotFoundException {
     Path inputPath = FileSystems.getDefault().getPath(path).normalize().toAbsolutePath();
     super.filename = inputPath.getFileName().toString();
     super.inputPath = inputPath;
@@ -37,6 +37,7 @@ public class JsonReader extends ConversionRateReader {
       logger.debug("Reader created: " + super.inputPath.toFile().getAbsolutePath());
     } catch (FileNotFoundException e) {
       logger.error(e.getMessage());
+      throw e;
     }
   }
 
