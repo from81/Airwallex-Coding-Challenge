@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.util.stream.Stream
 
-class Reader {
+class cReader {
 
     private val mapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
