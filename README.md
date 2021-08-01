@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/from81/Airwallex-Coding-Challenge/branch/main/graph/badge.svg?token=TYL8DDFQU1)](https://codecov.io/gh/from81/Airwallex-Coding-Challenge)
+
 # Airwallex coding challenge
 
 The aim of this exercise is to implement an "alerting" service which
